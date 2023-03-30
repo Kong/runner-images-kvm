@@ -14,7 +14,8 @@ if is_ubuntu20; then
 else 
 
     # Install the oc CLI
-    download_url="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"   
+    toolset_version="4.15.18"
+    download_url="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/$toolset_version/openshift-client-linux-$toolset_version.tar.gz"
 fi
 
 archive_path=$(download_with_retry "$download_url")
