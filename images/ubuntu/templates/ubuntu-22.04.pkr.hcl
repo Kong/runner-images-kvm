@@ -175,8 +175,55 @@ source "azure-arm" "build_image" {
   }
 }
 
+variable "vm_template_name" {
+  type    = string
+  default = "ubuntu-22.04"
+}
+
+variable "ubuntu_iso_file" {
+  type    = string
+  default = "ubuntu-22.04.1-live-server-amd64.iso"
+}
+
+source "qemu" "custom_image" {
+
+  http_directory = "cloud-init"
+  #iso_url        = "https://releases.ubuntu.com/22.04.1/${var.ubuntu_iso_file}"
+  #iso_checksum   = "file:https://releases.ubuntu.com/22.04.1/SHA256SUMS"
+  iso_url      = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+  iso_checksum = "file:https://cloud-images.ubuntu.com/jammy/current/SHA256SUMS"
+  disk_image   = true
+
+
+  qemuargs = [
+    ["-smbios",
+      "type=1,serial=ds=nocloud-net;instance-id=packer;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+    ]
+  ]
+
+  ssh_password = "ubuntu"
+  ssh_username = "ubuntu"
+  ssh_timeout  = "10m" # can be slow on CI
+
+  headless         = true  # false # to see the process, In CI systems set to true
+  accelerator      = "kvm" # set to none if no kvm installed
+  format           = "qcow2"
+  memory           = 4096
+  disk_size        = "86G"
+  cpus             = 16
+  disk_compression = true
+  disk_interface   = "virtio"
+  # net_device       = "virtio-net"
+
+  vm_name = "${var.vm_template_name}"
+}
+
+
 build {
-  sources = ["source.azure-arm.build_image"]
+  sources = ["source.qemu.custom_image"]
+  provisioner "shell" {
+    inline = ["while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for Cloud-Init...'; sleep 1; done"]
+  }
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
@@ -381,23 +428,6 @@ build {
   }
 
   provisioner "shell" {
-    environment_vars = ["IMAGE_VERSION=${var.image_version}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    inline           = ["pwsh -File ${var.image_folder}/SoftwareReport/Generate-SoftwareReport.ps1 -OutputDirectory ${var.image_folder}", "pwsh -File ${var.image_folder}/tests/RunAll-Tests.ps1 -OutputDirectory ${var.image_folder}"]
-  }
-
-  provisioner "file" {
-    destination = "${path.root}/../Ubuntu2204-Readme.md"
-    direction   = "download"
-    source      = "${var.image_folder}/software-report.md"
-  }
-
-  provisioner "file" {
-    destination = "${path.root}/../software-report.json"
-    direction   = "download"
-    source      = "${var.image_folder}/software-report.json"
-  }
-
-  provisioner "shell" {
     environment_vars = ["HELPER_SCRIPT_FOLDER=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "IMAGE_FOLDER=${var.image_folder}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/configure-system.sh"]
@@ -410,12 +440,31 @@ build {
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["mkdir -p /etc/vsts", "cp /tmp/ubuntu2204.conf /etc/vsts/machine_instance.conf"]
+    remote_folder   = "/tmp"
+    inline = [
+      "/usr/bin/apt-get clean",
+      "echo '* soft core unlimited' >> /etc/security/limits.conf",
+      "echo '* hard core unlimited' >> /etc/security/limits.conf",
+      "echo 'kernel.panic = 10' >> /etc/sysctl.conf",
+      "rm -rf /etc/apparmor.d/cache/* /etc/apparmor.d/cache/.features /etc/netplan/50-cloud-init.yaml /etc/ssh/ssh_host* /etc/sudoers.d/90-cloud-init-users",
+      "/usr/bin/truncate --size 0 /etc/machine-id",
+      "/usr/bin/gawk -i inplace '/PasswordAuthentication/ { gsub(/yes/, \"no\") }; { print }' /etc/ssh/sshd_config",
+      "rm -rf /root/.ssh",
+      "rm -f /snap/README",
+      "find /usr/share/netplan -name __pycache__ -exec rm -r {} +",
+      "rm -rf /var/cache/pollinate/seeded /var/cache/snapd/* /var/cache/motd-news",
+      "rm -rf /var/lib/cloud /var/lib/dbus/machine-id /var/lib/private /var/lib/systemd/timers /var/lib/systemd/timesync /var/lib/systemd/random-seed",
+      "rm -f /var/lib/ubuntu-release-upgrader/release-upgrade-available",
+      "rm -f /var/lib/update-notifier/fsck-at-reboot /var/lib/update-notifier/hwe-eol",
+      "find /var/log -type f -exec rm {} +",
+      "rm -rf /tmp/* /tmp/.*-unix /var/tmp/*",
+      "rm -rf /home/packer",
+      # "for i in group gshadow passwd shadow subuid subgid; do mv /etc/$i- /etc/$i; done",
+      "/bin/sync",
+      "/sbin/fstrim -v /",
+    ]
   }
 
-  provisioner "shell" {
-    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["sleep 30", "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
-  }
+
 
 }

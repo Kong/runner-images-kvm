@@ -175,8 +175,44 @@ source "azure-arm" "build_image" {
   }
 }
 
+variable "vm_template_name" {
+  type    = string
+  default = "ubuntu-24.04"
+}
+
+source "qemu" "custom_image" {
+
+  http_directory = "cloud-init"
+  iso_url      = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  iso_checksum = "file:https://cloud-images.ubuntu.com/noble/current/SHA256SUMS"
+  disk_image   = true
+
+
+  qemuargs = [
+    ["-smbios",
+      "type=1,serial=ds=nocloud-net;instance-id=packer;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+    ]
+  ]
+
+  ssh_password = "ubuntu"
+  ssh_username = "ubuntu"
+  ssh_timeout  = "10m" # can be slow on CI
+
+  headless         = true  # false # to see the process, In CI systems set to true
+  accelerator      = "kvm" # set to none if no kvm installed
+  format           = "qcow2"
+  memory           = 4096
+  disk_size        = "86G"
+  cpus             = 16
+  disk_compression = true
+  disk_interface   = "virtio"
+  # net_device       = "virtio-net"
+
+  vm_name = "${var.vm_template_name}"
+}
+
 build {
-  sources = ["source.azure-arm.build_image"]
+  sources = ["source.qemu.custom_image"]
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
@@ -390,9 +426,36 @@ provisioner "shell" {
     scripts          = ["${path.root}/../scripts/build/configure-system.sh"]
   }
 
+  # provisioner "shell" {
+  #   execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+  #   inline          = ["sleep 30", "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
+  # }
+
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["sleep 30", "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
+    remote_folder   = "/tmp"
+    inline = [
+      "/usr/bin/apt-get clean",
+      "echo '* soft core unlimited' >> /etc/security/limits.conf",
+      "echo '* hard core unlimited' >> /etc/security/limits.conf",
+      "echo 'kernel.panic = 10' >> /etc/sysctl.conf",
+      "rm -rf /etc/apparmor.d/cache/* /etc/apparmor.d/cache/.features /etc/netplan/50-cloud-init.yaml /etc/ssh/ssh_host* /etc/sudoers.d/90-cloud-init-users",
+      "/usr/bin/truncate --size 0 /etc/machine-id",
+      "/usr/bin/gawk -i inplace '/PasswordAuthentication/ { gsub(/yes/, \"no\") }; { print }' /etc/ssh/sshd_config",
+      "rm -rf /root/.ssh",
+      "rm -f /snap/README",
+      "find /usr/share/netplan -name __pycache__ -exec rm -r {} +",
+      "rm -rf /var/cache/pollinate/seeded /var/cache/snapd/* /var/cache/motd-news",
+      "rm -rf /var/lib/cloud /var/lib/dbus/machine-id /var/lib/private /var/lib/systemd/timers /var/lib/systemd/timesync /var/lib/systemd/random-seed",
+      "rm -f /var/lib/ubuntu-release-upgrader/release-upgrade-available",
+      "rm -f /var/lib/update-notifier/fsck-at-reboot /var/lib/update-notifier/hwe-eol",
+      "find /var/log -type f -exec rm {} +",
+      "rm -rf /tmp/* /tmp/.*-unix /var/tmp/*",
+      "rm -rf /home/packer",
+      # "for i in group gshadow passwd shadow subuid subgid; do mv /etc/$i- /etc/$i; done",
+      "/bin/sync",
+      "/sbin/fstrim -v /",
+    ]
   }
 
 }
