@@ -1,6 +1,281 @@
+variable "allowed_inbound_ip_addresses" {
+  type    = list(string)
+  default = []
+}
+
+variable "azure_tags" {
+  type    = map(string)
+  default = {}
+}
+
+variable "build_resource_group_name" {
+  type    = string
+  default = "${env("BUILD_RG_NAME")}"
+}
+
+variable "client_cert_path" {
+  type    = string
+  default = "${env("ARM_CLIENT_CERT_PATH")}"
+}
+
+variable "client_id" {
+  type    = string
+  default = "${env("ARM_CLIENT_ID")}"
+}
+
+variable "client_secret" {
+  type      = string
+  default   = "${env("ARM_CLIENT_SECRET")}"
+  sensitive = true
+}
+
+variable "dockerhub_login" {
+  type    = string
+  default = "${env("DOCKERHUB_LOGIN")}"
+}
+
+variable "dockerhub_password" {
+  type    = string
+  default = "${env("DOCKERHUB_PASSWORD")}"
+}
+
+variable "helper_script_folder" {
+  type    = string
+  default = "/imagegeneration/helpers"
+}
+
+variable "image_folder" {
+  type    = string
+  default = "/imagegeneration"
+}
+
+variable "image_os" {
+  type    = string
+  default = "ubuntu22"
+}
+
+variable "image_version" {
+  type    = string
+  default = "dev"
+}
+
+variable "imagedata_file" {
+  type    = string
+  default = "/imagegeneration/imagedata.json"
+}
+
+variable "installer_script_folder" {
+  type    = string
+  default = "/imagegeneration/installers"
+}
+
+variable "install_password" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
+variable "location" {
+  type    = string
+  default = ""
+}
+
+variable "managed_image_name" {
+  type    = string
+  default = ""
+}
+
+variable "managed_image_resource_group_name" {
+  type    = string
+  default = "${env("ARM_RESOURCE_GROUP")}"
+}
+
+variable "private_virtual_network_with_public_ip" {
+  type    = bool
+  default = false
+}
+
+variable "subscription_id" {
+  type    = string
+  default = "${env("ARM_SUBSCRIPTION_ID")}"
+}
+
+variable "temp_resource_group_name" {
+  type    = string
+  default = "${env("TEMP_RESOURCE_GROUP_NAME")}"
+}
+
+variable "tenant_id" {
+  type    = string
+  default = "${env("ARM_TENANT_ID")}"
+}
+
+variable "virtual_network_name" {
+  type    = string
+  default = "${env("VNET_NAME")}"
+}
+
+variable "virtual_network_resource_group_name" {
+  type    = string
+  default = "${env("VNET_RESOURCE_GROUP")}"
+}
+
+variable "virtual_network_subnet_name" {
+  type    = string
+  default = "${env("VNET_SUBNET")}"
+}
+
+variable "vm_size" {
+  type    = string
+  default = "Standard_D4s_v4"
+}
+
+variable "image_offer" {
+  type    = string
+  default = "0001-com-ubuntu-server-jammy"
+}
+
+variable "image_publisher" {
+  type    = string
+  default = "canonical"
+}
+
+variable "image_sku" {
+  type    = string
+  default = "22_04-lts"
+}
+
+variable "gallery_name" {
+  type    = string
+  default = "${env("GALLERY_NAME")}"
+}
+
+variable "gallery_resource_group_name" {
+  type    = string
+  default = "${env("GALLERY_RG_NAME")}"
+}
+
+variable "gallery_image_name" {
+  type    = string
+  default = "${env("GALLERY_IMAGE_NAME")}"
+}
+
+variable "gallery_image_version" {
+  type    = string
+  default = "${env("GALLERY_IMAGE_VERSION")}"
+}
+
+variable "gallery_storage_account_type" {
+  type    = string
+  default = "${env("GALLERY_STORAGE_ACCOUNT_TYPE")}"
+}
+
+variable "use_azure_cli_auth" {
+  type    = bool
+  default = false
+}
+
+variable "os_disk_size_gb" {
+  type    = number
+  default = 75
+}
+
+variable "image_os_type" {
+  type    = string
+  default = "Linux"
+}
+
+source "azure-arm" "build_image" {
+  allowed_inbound_ip_addresses           = "${var.allowed_inbound_ip_addresses}"
+  build_resource_group_name              = "${var.build_resource_group_name}"
+  client_cert_path                       = "${var.client_cert_path}"
+  client_id                              = "${var.client_id}"
+  client_secret                          = "${var.client_secret}"
+  use_azure_cli_auth                     = var.use_azure_cli_auth
+  image_offer                            = "${var.image_offer}"
+  image_publisher                        = "${var.image_publisher}"
+  image_sku                              = "${var.image_sku}"
+  location                               = "${var.location}"
+  managed_image_name                     = "${var.managed_image_name}"
+  managed_image_resource_group_name      = "${var.managed_image_resource_group_name}"
+  os_disk_size_gb                        = var.os_disk_size_gb
+  os_type                                = var.image_os_type
+  private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
+  subscription_id                        = "${var.subscription_id}"
+  temp_resource_group_name               = "${var.temp_resource_group_name}"
+  tenant_id                              = "${var.tenant_id}"
+  virtual_network_name                   = "${var.virtual_network_name}"
+  virtual_network_resource_group_name    = "${var.virtual_network_resource_group_name}"
+  virtual_network_subnet_name            = "${var.virtual_network_subnet_name}"
+  vm_size                                = "${var.vm_size}"
+
+  shared_image_gallery_destination {
+    subscription                         = var.subscription_id
+    gallery_name                         = var.gallery_name
+    resource_group                       = var.gallery_resource_group_name
+    image_name                           = var.gallery_image_name
+    image_version                        = var.gallery_image_version
+    storage_account_type                 = var.gallery_storage_account_type
+  }
+
+  dynamic "azure_tag" {
+    for_each = var.azure_tags
+    content {
+      name = azure_tag.key
+      value = azure_tag.value
+    }
+  }
+}
+
+variable "vm_template_name" {
+  type    = string
+  default = "ubuntu-22.04"
+}
+
+variable "ubuntu_iso_file" {
+  type    = string
+  default = "ubuntu-22.04.1-live-server-amd64.iso"
+}
+
+source "qemu" "custom_image" {
+
+  http_directory = "cloud-init"
+  #iso_url        = "https://releases.ubuntu.com/22.04.1/${var.ubuntu_iso_file}"
+  #iso_checksum   = "file:https://releases.ubuntu.com/22.04.1/SHA256SUMS"
+  iso_url      = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+  iso_checksum = "file:https://cloud-images.ubuntu.com/jammy/current/SHA256SUMS"
+  disk_image   = true
+
+
+  qemuargs = [
+    ["-smbios",
+      "type=1,serial=ds=nocloud-net;instance-id=packer;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+    ]
+  ]
+
+  ssh_password = "ubuntu"
+  ssh_username = "ubuntu"
+  ssh_timeout  = "10m" # can be slow on CI
+
+  headless         = true  # false # to see the process, In CI systems set to true
+  accelerator      = "kvm" # set to none if no kvm installed
+  format           = "qcow2"
+  memory           = 4096
+  disk_size        = "86G"
+  cpus             = 16
+  disk_compression = true
+  disk_interface   = "virtio"
+  # net_device       = "virtio-net"
+
+  vm_name = "${var.vm_template_name}"
+}
+
+
 build {
-  sources = ["source.azure-arm.image"]
-  name = "ubuntu-22_04"
+  sources = ["source.qemu.custom_image"]
+  provisioner "shell" {
+    inline = ["while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for Cloud-Init...'; sleep 1; done"]
+  }
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
@@ -206,23 +481,6 @@ build {
   }
 
   provisioner "shell" {
-    environment_vars = ["IMAGE_VERSION=${var.image_version}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    inline           = ["pwsh -File ${var.image_folder}/SoftwareReport/Generate-SoftwareReport.ps1 -OutputDirectory ${var.image_folder}", "pwsh -File ${var.image_folder}/tests/RunAll-Tests.ps1 -OutputDirectory ${var.image_folder}"]
-  }
-
-  provisioner "file" {
-    destination = "${path.root}/../Ubuntu2204-Readme.md"
-    direction   = "download"
-    source      = "${var.image_folder}/software-report.md"
-  }
-
-  provisioner "file" {
-    destination = "${path.root}/../software-report.json"
-    direction   = "download"
-    source      = "${var.image_folder}/software-report.json"
-  }
-
-  provisioner "shell" {
     environment_vars = ["HELPER_SCRIPT_FOLDER=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "IMAGE_FOLDER=${var.image_folder}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/configure-system.sh"]
@@ -235,18 +493,32 @@ build {
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["mkdir -p /etc/vsts", "cp /tmp/ubuntu2204.conf /etc/vsts/machine_instance.conf"]
+    remote_folder   = "/tmp"
+    inline = [
+      "/usr/bin/apt-get clean",
+      "echo '* soft core unlimited' >> /etc/security/limits.conf",
+      "echo '* hard core unlimited' >> /etc/security/limits.conf",
+      "echo 'kernel.panic = 10' >> /etc/sysctl.conf",
+      "rm -rf /etc/apparmor.d/cache/* /etc/apparmor.d/cache/.features /etc/netplan/50-cloud-init.yaml /etc/ssh/ssh_host* /etc/sudoers.d/90-cloud-init-users",
+      "/usr/bin/truncate --size 0 /etc/machine-id",
+      "/usr/bin/gawk -i inplace '/PasswordAuthentication/ { gsub(/yes/, \"no\") }; { print }' /etc/ssh/sshd_config",
+      "rm -rf /root/.ssh",
+      "rm -f /snap/README",
+      "find /usr/share/netplan -name __pycache__ -exec rm -r {} +",
+      "rm -rf /var/cache/pollinate/seeded /var/cache/snapd/* /var/cache/motd-news",
+      "rm -rf /var/lib/cloud /var/lib/dbus/machine-id /var/lib/private /var/lib/systemd/timers /var/lib/systemd/timesync /var/lib/systemd/random-seed",
+      "rm -f /var/lib/ubuntu-release-upgrader/release-upgrade-available",
+      "rm -f /var/lib/update-notifier/fsck-at-reboot /var/lib/update-notifier/hwe-eol",
+      "find /var/log -type f -exec rm {} +",
+      "rm -rf /tmp/* /tmp/.*-unix /var/tmp/*",
+      "rm -rf /home/packer",
+      "cp /etc/skel/. /home/ubuntu/ -r; chown -R ubuntu:ubuntu /home/ubuntu",
+      # "for i in group gshadow passwd shadow subuid subgid; do mv /etc/$i- /etc/$i; done",
+      "/bin/sync",
+      "/sbin/fstrim -v /",
+    ]
   }
 
-  provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/post-build-validation.sh"]
-  }
 
-  provisioner "shell" {
-    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["sleep 30", "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
-  }
 
 }
