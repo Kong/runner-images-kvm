@@ -38,7 +38,13 @@ edgedriver_version_url="https://msedgedriver.azureedge.net/LATEST_RELEASE_${edge
 # Convert a resulting file to normal UTF-8
 edgedriver_latest_version=$(curl -fsSL "$edgedriver_version_url" | iconv -f utf-16 -t utf-8 | tr -d '\r')
 
-edgedriver_url="https://msedgedriver.azureedge.net/${edgedriver_latest_version}/edgedriver_linux64.zip"
+if [[ $ARCH == "arm64" ]]; then
+	arch="arm64"
+else
+	arch="linux64"
+fi
+
+edgedriver_url="https://msedgedriver.azureedge.net/${edgedriver_latest_version}/edgedriver_$arch.zip"
 edgedriver_archive_path=$(download_with_retry "$edgedriver_url")
 
 unzip -qq "$edgedriver_archive_path" -d "$EDGEDRIVER_DIR"
