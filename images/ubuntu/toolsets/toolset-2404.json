@@ -7,11 +7,6 @@
             "platform_version": "24.04",
             "arch": "x64",
             "versions": [
-                "3.9.*",
-                "3.10.*",
-                "3.11.*",
-                "3.12.*",
-                "3.13.*"
             ]
         },
         {
@@ -19,9 +14,6 @@
             "arch": "x64",
             "platform" : "linux",
             "versions": [
-                "3.9",
-                "3.10",
-                "3.11"
             ]
         },
         {
@@ -61,9 +53,7 @@
             "name": "CodeQL",
             "platform" : "linux",
             "arch": "x64",
-            "versions": [
-                "*"
-            ]
+            "versions": []
         }
     ],
     "java": {
@@ -208,12 +198,12 @@
             {
                 "plugin": "buildx",
                 "version": "latest",
-                "asset": "linux-amd64"
+                "asset": "linux-arm64"
             },
             {
                 "plugin": "compose",
                 "version": "2.38.2",
-                "asset": "linux-x86_64"
+                "asset": "linux-aarch64"
             }
         ]
     },
