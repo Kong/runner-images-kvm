@@ -257,12 +257,12 @@
             {
                 "plugin": "buildx",
                 "version": "latest",
-                "asset": "linux-amd64"
-            },
+                "asset": "linux-arm64"
+            },            
             {
                 "plugin": "compose",
                 "version": "2.38.2",
-                "asset": "linux-x86_64"
+                "asset": "linux-aarch64"
             }
         ]
     },
@@ -278,8 +278,7 @@
     ],
     "dotnet": {
         "versions": [
-            "8.0",
-            "9.0"
+            "6.0"
         ],
         "tools": [
             { "name": "nbgv", "test": "nbgv --version", "getversion" : "nbgv --version" }
