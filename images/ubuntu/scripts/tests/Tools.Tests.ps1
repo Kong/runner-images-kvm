@@ -57,10 +57,6 @@ Describe "Rust" {
         It "Cargo audit" {
             "cargo audit --version" | Should -ReturnZeroExitCode
         }
-
-        It "Cargo outdated" {
-            "cargo outdated --version" | Should -ReturnZeroExitCode
-        }
     }
 }
 
