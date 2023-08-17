@@ -6,6 +6,7 @@
 
 # Source the helpers for use with the script
 source $HELPER_SCRIPTS/os.sh
+source $HELPER_SCRIPTS/install.sh
 
 #
 # pin podman due to https://github.com/actions/runner-images/issues/7753
@@ -24,7 +25,7 @@ if is_ubuntu20; then
     REPO_PATH="/etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
 
     curl -fsSL "${REPO_URL}/Release.key" | gpg --dearmor -o $GPG_KEY
-    echo "deb [arch=amd64 signed-by=$GPG_KEY] ${REPO_URL}/ /" > $REPO_PATH
+    echo "deb [arch=$ARCH signed-by=$GPG_KEY] ${REPO_URL}/ /" > $REPO_PATH
 fi
 
 # Install podman, buildah, skopeo container's tools

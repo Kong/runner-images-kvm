@@ -8,7 +8,7 @@ source $HELPER_SCRIPTS/os.sh
 
 touch /etc/apt/apt-mirrors.txt
 
-printf "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n" | tee -a /etc/apt/apt-mirrors.txt
+printf "http://mirror.hetzner.com/ubuntu/packages\tpriority:1\n" | tee -a /etc/apt/apt-mirrors.txt
 printf "http://archive.ubuntu.com/ubuntu/\tpriority:2\n" | tee -a /etc/apt/apt-mirrors.txt
 printf "http://security.ubuntu.com/ubuntu/\tpriority:3\n" | tee -a /etc/apt/apt-mirrors.txt
 
