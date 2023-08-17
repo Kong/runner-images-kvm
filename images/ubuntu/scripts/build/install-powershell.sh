@@ -10,24 +10,32 @@ source $HELPER_SCRIPTS/os.sh
 
 pwsh_version=$(get_toolset_value .pwsh.version)
 
-if is_ubuntu26; then
-    # pwsh for ubuntu 26.04 is not yet available in apt repo, install from GitHub release tarball
-    # Ubuntu 26.04: install from GitHub release tarball
-    download_url=$(resolve_github_release_asset_url "PowerShell/PowerShell" "endswith(\"linux-x64.tar.gz\")" "$pwsh_version" "" "true")
-    archive_path=$(download_with_retry "$download_url")
+if [[ $(arch) == "aarch64" ]]; then
+	pwshversion=7.2.13
 
-    # Create the target folder where powershell will be placed
-    sudo mkdir -p /opt/microsoft/powershell/7
+	# Download the powershell '.tar.gz' archive
+	curl -L -o /tmp/powershell.tar.gz https://github.com/PowerShell/PowerShell/releases/download/v$pwshversion/powershell-$pwshversion-linux-arm64.tar.gz
 
-    # Expand powershell to the target folder
-    sudo tar zxf "$archive_path" -C /opt/microsoft/powershell/7
+	# Create the target folder where powershell will be placed
+	sudo mkdir -p /opt/microsoft/powershell/7
 
-    # Set execute permissions
-    sudo chmod +x /opt/microsoft/powershell/7/pwsh
+	# Expand powershell to the target folder
+	sudo tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7
 
-    # Create the symbolic link that points to pwsh
-    sudo ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
+	# Set execute permissions
+	sudo chmod +x /opt/microsoft/powershell/7/pwsh
+
+	# Create the symbolic link that points to pwsh
+	sudo ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
+	exit 0
+fi
+
+if [[ "${ARCH}" == "arm64" ]]; then
+    ARCH_M="arm64"
 else
-    # Install Powershell via apt
+    ARCH_M="x64"
+fi
+
+# Install Powershell
     apt-get install powershell=$pwsh_version*
 fi
