@@ -3,7 +3,6 @@
 ##  File:  install-github-cli.sh
 ##  Desc:  Install GitHub CLI
 ##         Must be run as non-root user after homebrew
-##  Supply chain security: GitHub CLI - checksum validation
 ################################################################################
 
 # Source the helpers for use with the script
@@ -20,12 +19,12 @@ else
 fi
 
 # Download GitHub CLI
-gh_cli_url=$(resolve_github_release_asset_url "cli/cli" "contains(\"linux\") and contains(\"$gh_cli_arch\") and endswith(\".deb\")" "latest")
+gh_cli_url=$(resolve_github_release_asset_url "cli/cli" "contains(\"linux\") and contains(\"$ARCH\") and endswith(\".deb\")" "latest")
 gh_cli_deb_path=$(download_with_retry "$gh_cli_url")
 
 # Supply chain security - GitHub CLI
 hash_url=$(resolve_github_release_asset_url "cli/cli" "endswith(\"checksums.txt\")" "latest")
-external_hash=$(get_checksum_from_url "$hash_url" "linux_${gh_cli_arch}.deb" "SHA256")
+external_hash=$(get_checksum_from_url "$hash_url" "linux_$ARCH.deb" "SHA256")
 use_checksum_comparison "$gh_cli_deb_path" "$external_hash"
 
 # Install GitHub CLI
