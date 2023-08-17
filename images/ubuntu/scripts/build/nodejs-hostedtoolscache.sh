@@ -37,10 +37,10 @@ for TOOLSET_VERSION in ${TOOLSET_VERSIONS[@]}; do
 
     echo "Downloading tar archive $PACKAGE_TAR_NAME"
     DOWNLOAD_URL="https://nodejs.org/dist/v$NODEJS_VERSION/$PACKAGE_TAR_NAME"
-    download_with_retries $DOWNLOAD_URL "/tmp" $PACKAGE_TAR_NAME
+    archive_path=$(download_with_retry $DOWNLOAD_URL)
 
-    echo "Expand '$PACKAGE_TAR_NAME' to the '$NODEJS_VERSION_PATH' folder"
-    tar xf "/tmp/$PACKAGE_TAR_NAME" -C $NODEJS_VERSION_PATH --strip-components=1
+    echo "Expand '$archive_path' to the '$NODEJS_VERSION_PATH' folder"
+    tar xf "$archive_path" -C $NODEJS_VERSION_PATH --strip-components=1
 
     COMPLETE_FILE_PATH="$NODEJS_VERSION_PATH/../$arch.complete"
     if [ ! -f $COMPLETE_FILE_PATH ]; then

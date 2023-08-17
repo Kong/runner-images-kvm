@@ -9,8 +9,12 @@ source $HELPER_SCRIPTS/install.sh
 source $HELPER_SCRIPTS/etc-environment.sh
 
 # Install
-image_label="ubuntu$(lsb_release -rs)"
 swift_version=$(curl -fsSL "https://api.github.com/repos/apple/swift/releases/latest" | jq -r '.tag_name | match("[0-9.]+").string')
+if [[ "${ARCH}" == "arm64" ]]; then
+    image_label="ubuntu$(lsb_release -rs)-aarch64"
+else
+    image_label="ubuntu$(lsb_release -rs)"
+fi
 swift_release_name="swift-${swift_version}-RELEASE-${image_label}"
 
 archive_url="https://swift.org/builds/swift-${swift_version}-release/${image_label//./}/swift-${swift_version}-RELEASE/${swift_release_name}.tar.gz"
