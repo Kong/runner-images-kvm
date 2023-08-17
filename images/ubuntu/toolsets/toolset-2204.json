@@ -252,12 +252,12 @@
             {
                 "plugin": "buildx",
                 "version": "latest",
-                "asset": "linux-amd64"
-            },
+                "asset": "linux-arm64"
+            },            
             {
                 "plugin": "compose",
                 "version": "2.27.1",
-                "asset": "linux-x86_64"
+                "asset": "linux-aarch64"
             }
         ]
     },
@@ -274,13 +274,11 @@
     "dotnet": {
         "aptPackages": [
             "dotnet-sdk-6.0",
-            "dotnet-sdk-7.0",
-            "dotnet-sdk-8.0"
+            "dotnet-sdk-7.0"
         ],
         "versions": [
             "6.0",
-            "7.0",
-            "8.0"
+            "7.0"
         ],
         "tools": [
             { "name": "nbgv", "test": "nbgv --version", "getversion" : "nbgv --version" }
