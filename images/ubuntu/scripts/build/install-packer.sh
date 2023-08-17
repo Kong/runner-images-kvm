@@ -18,7 +18,7 @@ else
 fi
 
 # Install Packer
-download_url=$(curl -fsSL https://api.releases.hashicorp.com/v1/releases/packer/latest | jq -r ".builds[] | select((.arch==\"$packer_arch\") and (.os==\"linux\")).url")
+download_url=$(curl -fsSL https://api.releases.hashicorp.com/v1/releases/packer/latest | jq -r '.builds[] | select((.arch=="'$ARCH'") and (.os=="linux")).url')
 archive_path=$(download_with_retry "$download_url")
 unzip -o -qq "$archive_path" -d /usr/local/bin
 
