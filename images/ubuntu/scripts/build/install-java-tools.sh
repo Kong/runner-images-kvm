@@ -12,7 +12,7 @@ create_java_environment_variable() {
     local java_version=$1
     local default=$2
 
-    local install_path_pattern="/usr/lib/jvm/temurin-${java_version}-jdk-amd64"
+    local install_path_pattern="/usr/lib/jvm/temurin-${java_version}-jdk-$ARCH"
 
     if [[ ${default} == "True" ]]; then
         echo "Setting up JAVA_HOME variable to ${install_path_pattern}"
@@ -30,7 +30,7 @@ install_open_jdk() {
 
     # Install Java from PPA repositories.
     apt-get -y install temurin-${java_version}-jdk=\*
-    java_version_path="/usr/lib/jvm/temurin-${java_version}-jdk-amd64"
+    java_version_path="/usr/lib/jvm/temurin-${java_version}-jdk-$ARCH"
 
     java_toolcache_path="${AGENT_TOOLSDIRECTORY}/Java_Temurin-Hotspot_jdk"
 
@@ -51,11 +51,17 @@ install_open_jdk() {
     echo "Java ${java_version} Toolcache Version Path: ${java_toolcache_version_path}"
     mkdir -p "${java_toolcache_version_path}"
 
+    if [[ $ARCH == "arm64" ]]; then
+	    arch="arm64"
+    else
+	    arch="x64"
+    fi
+
     # Create a complete file
-    touch "${java_toolcache_version_path}/x64.complete"
+    touch "${java_toolcache_version_path}/$arch.complete"
 
     # Create symlink for Java
-    ln -s ${java_version_path} "${java_toolcache_version_path}/x64"
+    ln -s ${java_version_path} "${java_toolcache_version_path}/$arch"
 
     # add extra permissions to be able execute command without sudo
     chmod -R 777 /usr/lib/jvm

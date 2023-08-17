@@ -32,7 +32,11 @@ echo "mozillateam $REPO_URL" >> $HELPER_SCRIPTS/apt-sources.txt
 echo 'pref("intl.locale.requested","en_US");' >> "/usr/lib/firefox/browser/defaults/preferences/syspref.js"
 
 # Download and unpack latest release of geckodriver
-download_url=$(resolve_github_release_asset_url "mozilla/geckodriver" "test(\"linux64.tar.gz$\")" "latest")
+if [[ $ARCH == "arm64" ]]; then
+	download_url=$(resolve_github_release_asset_url "mozilla/geckodriver" "test(\"linux-aarch64.tar.gz$\")" "latest")
+else
+	download_url=$(resolve_github_release_asset_url "mozilla/geckodriver" "test(\"linux64.tar.gz$\")" "latest")
+fi
 driver_archive_path=$(download_with_retry "$download_url")
 
 GECKODRIVER_DIR="/usr/local/share/gecko_driver"
