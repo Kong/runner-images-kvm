@@ -240,3 +240,12 @@ use_checksum_comparison() {
         echo "Checksum verification passed"
     fi
 }
+
+if [[ $(arch) == "aarch64" ]]; then
+        ARCH=arm64
+	ARCH_L=aarch64
+else
+        ARCH=amd64
+	ARCH_L=x86_64
+fi
+
