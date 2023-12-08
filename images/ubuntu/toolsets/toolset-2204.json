@@ -214,6 +214,30 @@
     "brew": [
     ],
     "docker": {
+        "images": [
+            "alpine:3.16",
+            "alpine:3.17",
+            "alpine:3.18",
+            "alpine:3.19",
+            "debian:10",
+            "debian:11",
+            "moby/buildkit:latest",
+            "node:18",
+            "node:20",
+            "node:22",
+            "node:18-alpine",
+            "node:20-alpine",
+            "node:22-alpine",
+            "ubuntu:20.04",
+            "ubuntu:22.04",
+            "redis:latest",
+            "postgres:13",
+            "postgres:latest",
+            "kong/grpcbin:latest",
+            "hashicorp/vault:latest",
+            "openzipkin/zipkin:2",
+            "nginx:latest"
+        ],
         "components": [
             {
                 "package": "containerd.io",
