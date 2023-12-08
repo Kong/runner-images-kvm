@@ -37,7 +37,9 @@ git checkout $rel
 git branch -D ${rel}-kvm 2>/dev/null
 git checkout -b ${rel}-kvm 2>/dev/null
 git clean -f
-cherry $(git log -n 1 --pretty=format:"%H" $last_kvm_branch)
+for c in $(git log --reverse -n 2 --pretty=format:"%H" $last_kvm_branch); do
+    cherry $c
+done
 push -f refs/heads/${rel}-kvm
 git tag -f ${rel}
 push -f refs/tags/${rel}
@@ -46,6 +48,7 @@ gh release create $rel --notes "https://github.com/actions/runner-images/release
 git branch -D ${rel}-kvm-arm64 2>/dev/null
 git checkout -b ${rel}-kvm-arm64 2>/dev/null
 git clean -f
+# total of 4 commits for arm64
 for c in $(git log --reverse -n 2 --pretty=format:"%H" $last_arm64_branch); do
     cherry $c
 done
