@@ -192,14 +192,6 @@
     ],
     "docker": {
         "images": [
-            "apache/kafka:4.0.0",
-            "confluentinc/cp-kafka:7.9.1",
-            "confluentinc/cp-schema-registry:7.9.1",
-            "confluentinc/cp-zookeeper:7.9.1",
-            "otel/opentelemetry-collector-contrib:0.52.0",
-            "redis:7.0.2",
-            "redis:7.0.5",
-            "quay.io/keycloak/keycloak:26.3",
             "postgres:15.6",
             "redis/redis-stack-server:7.2.0-v19",
             "redpandadata/redpanda:v25.3.5"
@@ -222,12 +214,12 @@
             {
                 "plugin": "buildx",
                 "version": "latest",
-                "asset": "linux-amd64"
+                "asset": "linux-arm64"
             },
             {
                 "plugin": "compose",
                 "version": "2.38.2",
-                "asset": "linux-x86_64"
+                "asset": "linux-aarch64"
             }
         ]
     },
