@@ -224,7 +224,14 @@
             "node:18-alpine",
             "node:20-alpine",
             "ubuntu:20.04",
-            "ubuntu:22.04"
+            "ubuntu:22.04",
+            "redis:latest",
+            "postgres:13",
+            "postgres:latest",
+            "kong/grpcbin:latest",
+            "hashicorp/vault:latest",
+            "openzipkin/zipkin:2",
+            "nginx:latest"
         ],
         "components": [
             {
