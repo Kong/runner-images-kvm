@@ -21,6 +21,7 @@ version=$(git describe --tags --always|cut -d/ -f2|cut -d- -f1)
 echo "Use version $version"
 
 pushd images/ubuntu/templates
+cp /usr/share/AAVMF/AAVMF_CODE.fd flash1.img || true
 rm -rf output-custom_image
 packer build -var dockerhub_login=$DOCKERHUB_LOGIN -var dockerhub_password=$DOCKERHUB_PASSWORD -var image_version=$version ./ubuntu-22.04.pkr.hcl
 
