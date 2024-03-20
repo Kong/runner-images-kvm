@@ -5,16 +5,16 @@ if [[ -z $DOCKERHUB_LOGIN || -z $DOCKERHUB_PASSWORD ]]; then
     exit 1
 fi
 
-git fetch --all --tags -f
+git fetch --tags -f
 
 if [[ $(arch) == "aarch64" ]]; then
     tag=$(git tag|grep ubuntu22|sort| grep -P '\.\d+-arm64$'| tail -n1)
 else
-    tag=$(git tag|grep ubuntu22|sort| grep -P '\.\d+$'| tail -n1)
+    tag=$(git tag|grep ubuntu22|sort| grep -P '\.\d+$'| grep -v arm64| tail -n1)
 fi
 
 echo "Use tag $tag"
-git checkout $tag
+git checkout refs/tags/$tag
 
 version=$(git describe --tags --always|cut -d/ -f2|cut -d- -f1)
 

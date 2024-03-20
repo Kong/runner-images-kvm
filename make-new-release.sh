@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 GREP=grep
 if [[ "$OSTYPE" == darwin* ]]; then
@@ -22,9 +22,9 @@ push() {
 
 git reset --hard
 git checkout main
-git remote add upstream https://github.com/actions/runner-images 2>/dev/null
-git fetch upstream --tags 2>/dev/null
-git fetch origin 2>/dev/null
+git remote add upstream https://github.com/actions/runner-images 2>/dev/null || true
+git fetch upstream --tags 2>/dev/null || true 
+git fetch origin 2>/dev/null || true
 
 rel=$(gh release list -R actions/runner-images|$GREP -oP "ubuntu22/[\d\.]+"|head -n1)
 last_kvm_branch=origin/$(git branch|grep kvm|grep -v arm64|grep -v $rel|sort|tail -n1|awk '{print $1}')
