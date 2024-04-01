@@ -1,0 +1,46 @@
+name: JIRA
+
+on:
+  schedule:
+  - cron:  '0 0 * * *'
+  workflow_dispatch:
+     inputs:
+      version:
+        description: 'Manually input a missing release version'
+        required: false
+        type: string
+
+jobs:
+  check-release-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        # required to fetch full history for getting timestamp
+        fetch-depth: 0
+
+    - name: Get latest release from owner/repo1
+      id: get_release
+      run: |
+        RELEASES=$(curl -s https://api.github.com/repos/actions/runner-images/releases)
+        RELEASE=$(echo "$RELEASES" | jq -r '.[] | select(.prerelease == false) | .tag_name' | sort -r | grep ubuntu22 |head -n1)
+        echo "RELEASE_TAG=$RELEASE" >> $GITHUB_OUTPUT
+
+    - name: Check if release tag exists in current repo
+      id: check_tag
+      run: |
+        CURRENT_TAGS=$(git tag --list)
+        RELEASE_TAG=${{ steps.get_release.outputs.RELEASE_TAG }}
+        if echo "$CURRENT_TAGS" | grep -q "$RELEASE_TAG"; then
+          echo "Tag exists in current repo"
+        else
+          echo "Tag does not exist in current repo"
+
+          # deduplication is handled on JIRA automation side
+          curl -s -X POST -H 'Content-type: application/json' \
+            "${{ secrets.JIRA_AUTOMATION_WEBHOOK }}" \
+            -d '{"version":"'$RELEASE_TAG'"}'
+        fi
+  
