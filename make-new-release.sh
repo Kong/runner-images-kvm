@@ -54,6 +54,22 @@ git pull origin ${rel}-kvm-arm64 --rebase 2>/dev/null
 for c in $(git log --reverse -n 2 --pretty=format:"%H" $last_arm64_branch); do
     cherry $c
 done
+
+# sanity check
+what=0
+for f in $(grep images/ubuntu/scripts/ -rPe "(?:x86_64|amd64)"|cut -d: -f1|sort|uniq); do
+    ff=$(echo $f|cut -d/ -f3-5)
+    fff=$(cat images/ubuntu/templates/ubuntu-22.04.pkr.hcl | grep $ff )
+    if [[ ! -z "$fff" && -z $(echo $fff |grep "//") ]]; then
+        echo "$f possible contain arch dependent install code, please check"
+        what=1
+    fi
+done
+if [[ $what -eq 1 ]]; then
+    echo "Press enter to continue ..."
+    read
+fi
+
 push -f refs/heads/${rel}-kvm-arm64
 git tag -f ${rel}-arm64
 push -f refs/tags/${rel}-arm64
