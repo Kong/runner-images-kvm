@@ -16,7 +16,7 @@ cherry() {
 
 push() {
     git push origin $@
-    git push private $@
+    #git push private $@
 }
 
 
