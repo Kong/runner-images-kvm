@@ -8,9 +8,9 @@ fi
 git fetch --tags -f
 
 if [[ $(arch) == "aarch64" ]]; then
-    tag=$(git tag|grep ubuntu22|sort| grep -P '\.\d+-arm64$'| tail -n1)
+    tag=$(git tag|grep ubuntu24|sort| grep -P '\.\d+-arm64$'| tail -n1)
 else
-    tag=$(git tag|grep ubuntu22|sort| grep -P '\.\d+$'| grep -v arm64| tail -n1)
+    tag=$(git tag|grep ubuntu24|sort| grep -P '\.\d+$'| grep -v arm64| tail -n1)
 fi
 
 echo "Use tag $tag"
@@ -23,7 +23,7 @@ echo "Use version $version"
 pushd images/ubuntu/templates
 cp /usr/share/AAVMF/AAVMF_CODE.fd flash1.img || true
 rm -rf output-custom_image
-packer build -var dockerhub_login=$DOCKERHUB_LOGIN -var dockerhub_password=$DOCKERHUB_PASSWORD -var image_version=$version ./ubuntu-22.04.pkr.hcl
+packer build -var dockerhub_login=$DOCKERHUB_LOGIN -var dockerhub_password=$DOCKERHUB_PASSWORD -var image_version=$version ./ubuntu-24.04.pkr.hcl
 
-mv output-custom_image/ubuntu-22.04 /root/ubuntu-22.04-$version
+mv output-custom_image/ubuntu-24.04 /root/ubuntu-24.04-$version
 popd

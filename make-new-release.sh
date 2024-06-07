@@ -26,7 +26,7 @@ git remote add upstream https://github.com/actions/runner-images 2>/dev/null || 
 git fetch upstream --tags 2>/dev/null || true 
 git fetch origin 2>/dev/null || true
 
-rel=$(gh release list -R actions/runner-images|$GREP -oP "ubuntu22/[\d\.]+"|head -n1)
+rel=$(gh release list -R actions/runner-images|$GREP -oP "ubuntu24/[\d\.]+"|head -n1)
 last_kvm_branch=origin/$(git branch|grep kvm|grep -v arm64|grep -v $rel|sort|tail -n1|awk '{print $1}')
 last_arm64_branch=origin/$(git branch|grep kvm-arm64|grep -v $rel|sort|tail -n1|awk '{print $1}')
 
