@@ -29,14 +29,14 @@ push() {
     #git push private $@
 }
 
-
 git reset --hard
 git checkout main
 git remote add upstream https://github.com/actions/runner-images 2>/dev/null || true
 git fetch upstream --tags 2>/dev/null || true 
 git fetch origin 2>/dev/null || true
 
-rel=$(gh release list -R actions/runner-images|$GREP -oP "ubuntu${urel}/[\d\.]+"|head -n1)
+tag=${2:-$(gh release list -R actions/runner-images|$GREP -oP "/\K[\d\.]+" | head -n1)}
+rel=ubuntu${urel}/${tag}
 last_kvm_branch=$(git branch -r|grep kvm|grep -v arm64|grep -v $rel|grep ubuntu${urel}|sort|tail -n1|awk '{print $1}')
 last_arm64_branch=$(git branch -r|grep kvm-arm64|grep -v $rel|grep ubuntu${urel}|sort|tail -n1|awk '{print $1}')
 

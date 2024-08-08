@@ -16,7 +16,9 @@ echo "Using ${rel}.04"
 
 git fetch --tags -f
 
-if [[ $(arch) == "aarch64" ]]; then
+if [ -n "$2" ]; then
+    tag=ubuntu${rel}/$2
+elif [[ $(arch) == "aarch64" ]]; then
     tag=$(git tag|grep ubuntu${rel}|sort| grep -P '\.\d+-arm64$'| tail -n1)
 else
     tag=$(git tag|grep ubuntu${rel}|sort| grep -P '\.\d+$'| grep -v arm64| tail -n1)
