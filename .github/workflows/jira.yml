@@ -27,6 +27,7 @@ jobs:
         RELEASES=$(curl -s https://api.github.com/repos/actions/runner-images/releases)
         RELEASE=$(echo "$RELEASES" | jq -r '.[] | select(.prerelease == false) | .tag_name' | sort -r | grep ubuntu22 |head -n1)
         echo "RELEASE_TAG=$RELEASE" >> $GITHUB_OUTPUT
+        echo "RELEASE_TAG=$RELEASE"
 
     - name: Check if release tag exists in current repo
       id: check_tag
