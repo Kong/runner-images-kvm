@@ -14,18 +14,18 @@ fi
 
 echo "Using ${rel}.04"
 
-git fetch --tags -f
+git fetch -f
 
 if [ -n "$2" ]; then
-    tag=ubuntu${rel}/$2
+    branch=remote/origin/ubuntu${rel}/$2
 elif [[ $(arch) == "aarch64" ]]; then
-    tag=$(git tag|grep ubuntu${rel}|sort| grep -P '\.\d+-arm64$'| tail -n1)
+    branch=$(git branch -a|grep remotes|grep ubuntu${rel}|sort| grep -P '\.\d+-kvm-arm64$'|tail -n1)
 else
-    tag=$(git tag|grep ubuntu${rel}|sort| grep -P '\.\d+$'| grep -v arm64| tail -n1)
+    branch=$(git branch -a|grep remote|grep -v arm64|grep ubuntu${rel}|sort| grep -P '\.\d+-kvm$'|tail -n1)
 fi
 
-echo "Use tag $tag"
-git checkout refs/tags/$tag
+echo "Use branch $branch"
+git checkout $branch
 
 version=$(git describe --tags --always|cut -d/ -f2|cut -d- -f1)
 
