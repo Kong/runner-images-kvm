@@ -31,6 +31,7 @@ push() {
 
 git reset --hard
 git checkout main
+git tag -l | xargs -I {} git tag -d {} #clean up all local tags to avoid being rejected when fetching upstream tags
 git remote add upstream https://github.com/actions/runner-images 2>/dev/null || true
 git fetch upstream --tags 2>/dev/null || true 
 git fetch origin 2>/dev/null || true
