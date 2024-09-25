@@ -17,7 +17,7 @@ echo "Using ${rel}.04"
 git fetch -f
 
 if [ -n "$2" ]; then
-    branch=remote/origin/ubuntu${rel}/$2
+    branch=origin/ubuntu${rel}/$2
 elif [[ $(arch) == "aarch64" ]]; then
     branch=$(git branch -a|grep remotes|grep ubuntu${rel}|sort| grep -P '\.\d+-kvm-arm64$'|tail -n1)
 else

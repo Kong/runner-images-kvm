@@ -47,8 +47,7 @@ if [[ -z $last_kvm_branch || -z $last_arm64_branch ]]; then
     exit 0
 fi
 
-git checkout $rel
-git merge upstream/main --no-ff
+git checkout upstream/$rel
 
 git branch -D ${rel}-kvm 2>/dev/null
 git checkout --no-track -b ${rel}-kvm 2>/dev/null
