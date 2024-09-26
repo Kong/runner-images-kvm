@@ -67,12 +67,7 @@ git checkout --no-track -b ${rel}-kvm-arm64 2>/dev/null
 git clean -f
 git pull origin ${rel}-kvm-arm64 --rebase 2>/dev/null
 # total of 4 commits for arm64
-# for ubuntu22 `-n` should be 3, for `ubuntu24` it should be 2
-n=3
-if [ $urel -eq 24 ]; then
-  n=2
-fi
-for c in $(git log --reverse -n $n --pretty=format:"%H" $last_arm64_branch); do
+for c in $(git log --reverse -n 3 --pretty=format:"%H" $last_arm64_branch); do
     cherry $c
 done
 
