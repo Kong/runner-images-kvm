@@ -31,7 +31,7 @@ push() {
 
 git reset --hard
 git checkout main
-git tag -l | xargs -I {} git tag -d {} #clean up all local tags to avoid being rejected when fetching upstream tags
+git tag -l | xargs -I {} git tag -d {} > /dev/null 2>&1 #clean up all local tags to avoid being rejected when fetching upstream tags
 git remote add upstream https://github.com/actions/runner-images 2>/dev/null || true
 git fetch upstream --tags 2>/dev/null || true 
 git fetch origin 2>/dev/null || true
@@ -48,7 +48,7 @@ if [[ -z $last_kvm_branch || -z $last_arm64_branch ]]; then
     exit 0
 fi
 
-git checkout upstream/$rel
+git checkout tags/$rel
 
 git branch -D ${rel}-kvm 2>/dev/null
 git checkout --no-track -b ${rel}-kvm 2>/dev/null
