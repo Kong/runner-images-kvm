@@ -5,7 +5,7 @@ if [[ -z $DOCKERHUB_LOGIN || -z $DOCKERHUB_PASSWORD ]]; then
     exit 1
 fi
 
-rel=${1:-22}
+rel=${1:-24}
 
 if [[ $rel != "22" && $rel != "24" ]]; then
     echo "Only support Ubuntu 22.04 and 24.04"
