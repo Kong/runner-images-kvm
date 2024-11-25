@@ -5,7 +5,7 @@ if [[ "$OSTYPE" == darwin* ]]; then
     GREP=ggrep
 fi
 
-urel=${1:-22}
+urel=${1:-24}
 
 if [[ $urel != "22" && $urel != "24" ]]; then
     echo "Only support Ubuntu 22.04 and 24.04"
