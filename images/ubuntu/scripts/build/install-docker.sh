@@ -71,10 +71,16 @@ if [[ "${DOCKERHUB_PULL_IMAGES:-yes}" == "yes" ]]; then
         docker login --username "${DOCKERHUB_LOGIN}" --password "${DOCKERHUB_PASSWORD}"
     fi
 
+    if [[ 'arm' == *"$(uname -m)"* ]]; then
+        platform_flag='--platform=linux/amd64'
+    else
+        platform_flag='--platform=linux/arm64/v8'
+    fi
+
     # Pull images
     images=$(get_toolset_value '.docker.images[]')
     for image in $images; do
-        docker pull "$image"
+        docker pull "$image" || docker pull "$platform_flag" "$image"
     done
 
     # Always attempt to logout so we do not leave our credentials on the built
