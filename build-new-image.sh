@@ -34,7 +34,11 @@ echo "Use version $version"
 pushd images/ubuntu/templates
 cp /usr/share/AAVMF/AAVMF_CODE.fd flash1.img || true
 rm -rf output-custom_image
-packer build -var dockerhub_login=$DOCKERHUB_LOGIN -var dockerhub_password=$DOCKERHUB_PASSWORD -var image_version=$version ./ubuntu-${rel}.04.pkr.hcl
+template_file=./ubuntu-${rel}.04.pkr.hcl
+if [ -f "build.ubuntu-${rel}_04.pkr.hcl" ]; then
+    template_file=./build.ubuntu-${rel}_04.pkr.hcl
+fi
+packer build -var dockerhub_login=$DOCKERHUB_LOGIN -var dockerhub_password=$DOCKERHUB_PASSWORD -var image_version=$version $template_file
 
 mv output-custom_image/ubuntu-${rel}.04 /root/ubuntu-${rel}.04-$version
 popd
