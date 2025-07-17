@@ -75,7 +75,7 @@ done
 what=0
 for f in $($GREP images/ubuntu/scripts/ -rPe "(?:x86_64|amd64)"|cut -d: -f1|sort|uniq); do
     ff=$(echo $f|cut -d/ -f3-5)
-    fff=$(cat images/ubuntu/templates/ubuntu-22.04.pkr.hcl | grep $ff )
+    fff=$(cat images/ubuntu/templates/build.ubuntu-22_04.pkr.hcl | grep $ff )
     if [[ ! -z "$fff" && -z $(echo $fff |grep "//") ]]; then
         echo "$f possible contain arch dependent install code, please check"
         what=1
