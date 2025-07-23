@@ -56,6 +56,21 @@ EOF
 # Reload systemd-tmpfiles to apply the new configuration
 systemd-tmpfiles --create /etc/tmpfiles.d/docker.conf
 
+# setup kong pull-through registry mirror/cache
+if [ -e /etc/docker/daemon.json ]; then
+    tmp=$(mktemp)
+    jq '.registry-mirrors = ["https://registry-1.kongdockerpull.link", "https://registry-ghcr.kongdockerpull.link"]' \
+        /etc/docker/daemon.json > "$tmp" \
+        && mv "$tmp" /etc/docker/daemon.json
+else
+    echo '{
+        "registry-mirrors": [
+            "https://registry-1.kongdockerpull.link",
+            "https://registry-ghcr.kongdockerpull.link"
+        ]
+    }' | tr -d $'\n' > /etc/docker/daemon.json
+fi
+
 # Enable docker.service
 systemctl is-active --quiet docker.service || systemctl start docker.service
 systemctl is-enabled --quiet docker.service || systemctl enable docker.service
