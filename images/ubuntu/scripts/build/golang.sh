@@ -1,7 +1,7 @@
 #!/bin/bash -e
 ################################################################################
 ##  File:  golang
-##  Desc:  Installs golang (manaul)
+##  Desc:  Installs golang (manual)
 ################################################################################
 
 source $HELPER_SCRIPTS/os.sh
@@ -21,15 +21,29 @@ if [ ! -d $GOLANG_PATH ]; then
     mkdir -p $GOLANG_PATH
 fi
 
-if [[ $ARCH == "arm64" ]]; then
+KERNEL_ARCH=$(uname -m)
+
+if [[ $KERNEL_ARCH == "s390x" ]]; then
+    ARCH="s390x"
+    arch="s390x"
+    echo "Detected s390x architecture. Setting ARCH=$ARCH"
+elif [[ $KERNEL_ARCH == "aarch64" ]] || [[ $ARCH == "arm64" ]]; then
+    ARCH="arm64"
     arch="arm64"
 else
+    ARCH="amd64"
     arch="x64"
 fi
 
 for TOOLSET_VERSION in ${TOOLSET_VERSIONS[@]}; do
     # Note: skip inproper version numbers like 1.20.0.linux -> 1.20.linux
     PACKAGE_TAR_NAME=$(echo "$PACKAGE_TAR_NAMES" | grep "^go${TOOLSET_VERSION}.${PLATFORM_NAME}-${ARCH}.tar.gz$" | grep -vP "go\d+\.\d+\.linux" | sort -V | tail -1)
+
+    if [[ -z "$PACKAGE_TAR_NAME" ]]; then
+        echo "Error: Could not find Go version $TOOLSET_VERSION for $ARCH"
+        continue
+    fi
+
     GOLANG_VERSION=$(echo "$PACKAGE_TAR_NAME" | cut -d'.' -f 1-3| cut -d'o' -f 2)
     GOLANG_VERSION_PATH="$GOLANG_PATH/$GOLANG_VERSION/$arch"
 
@@ -50,8 +64,8 @@ for TOOLSET_VERSION in ${TOOLSET_VERSIONS[@]}; do
     fi
 
     if [[ "$TOOLSET_VERSION" == "$(get_toolset_value '.toolcache[] | select(.name | contains("go")) | .default')" ]]; then
-	    echo "Create symlink for default toolset path"
-	    ln -svf $GOLANG_VERSION_PATH/bin/go /usr/bin/go
+        echo "Create symlink for default toolset path"
+        ln -svf $GOLANG_VERSION_PATH/bin/go /usr/bin/go
     fi
 
     set_etc_environment_variable "GOROOT_$(echo $GOLANG_VERSION| cut -d'.' -f1)_$(echo $GOLANG_VERSION| cut -d'.' -f2)_${arch^^}" $GOLANG_VERSION_PATH

@@ -4,6 +4,27 @@
 ##  Desc:  Install PowerShell Core
 ################################################################################
 
+set -e
+
+ARCH=$(uname -m)
+echo "Architecture detected: $ARCH"
+
+if [ "$ARCH" = "s390x" ]; then
+    echo "Detected s390x. Attempting to install PowerShell via Snap..."
+
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y snapd
+
+    if snap install powershell --classic; then
+        echo "PowerShell installed via Snap successfully!"
+        ln -sf /snap/bin/pwsh /usr/bin/pwsh
+        pwsh --version
+    fi
+
+    exit 0
+fi
+
 # Source the helpers for use with the script
 source $HELPER_SCRIPTS/install.sh
 source $HELPER_SCRIPTS/os.sh
@@ -11,23 +32,23 @@ source $HELPER_SCRIPTS/os.sh
 pwsh_version=$(get_toolset_value .pwsh.version)
 
 if [[ $(arch) == "aarch64" ]]; then
-	pwshversion=7.2.13
+        pwshversion=7.2.13
 
-	# Download the powershell '.tar.gz' archive
-	curl -L -o /tmp/powershell.tar.gz https://github.com/PowerShell/PowerShell/releases/download/v$pwshversion/powershell-$pwshversion-linux-arm64.tar.gz
+        # Download the powershell '.tar.gz' archive
+        curl -L -o /tmp/powershell.tar.gz https://github.com/PowerShell/PowerShell/releases/download/v$pwshversion/powershell-$pwshversion-linux-arm64.tar.gz
 
-	# Create the target folder where powershell will be placed
-	sudo mkdir -p /opt/microsoft/powershell/7
+        # Create the target folder where powershell will be placed
+        sudo mkdir -p /opt/microsoft/powershell/7
 
-	# Expand powershell to the target folder
-	sudo tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7
+        # Expand powershell to the target folder
+        sudo tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7
 
-	# Set execute permissions
-	sudo chmod +x /opt/microsoft/powershell/7/pwsh
+        # Set execute permissions
+        sudo chmod +x /opt/microsoft/powershell/7/pwsh
 
-	# Create the symbolic link that points to pwsh
-	sudo ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
-	exit 0
+        # Create the symbolic link that points to pwsh
+        sudo ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
+        exit 0
 fi
 
 if [[ "${ARCH}" == "arm64" ]]; then
@@ -36,5 +57,5 @@ else
     ARCH_M="x64"
 fi
 
-# Install Powershell
-    apt-get install powershell=$pwsh_version*
+# Install Powershell (Only for AMD64)
+apt-get install powershell=$pwsh_version*

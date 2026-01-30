@@ -1,62 +1,107 @@
 #!/bin/bash -e
 ################################################################################
 ##  File:  install-kubernetes-tools.sh
-##  Desc:  Installs kubectl, helm, kustomize
-##  Supply chain security: KIND, minikube - checksum validation
+##  Desc:  Install Kubernetes tools: kubectl, kind, minikube, helm, kustomize
 ################################################################################
 
-# Source the helpers for use with the script
 source $HELPER_SCRIPTS/install.sh
+source $HELPER_SCRIPTS/etc-environment.sh
 
-# Download KIND
-kind_url=$(resolve_github_release_asset_url "kubernetes-sigs/kind" "endswith(\"kind-linux-$ARCH\")" "latest")
-kind_binary_path=$(download_with_retry "${kind_url}")
+# --- [Version Definition] ---
+# Since kind version is not in toolset.json, we hardcode it here.
+KIND_VERSION="0.31.0"
 
-# Supply chain security - KIND
-kind_external_hash=$(get_checksum_from_url "${kind_url}.sha256sum" "kind-linux-$ARCH" "SHA256")
-use_checksum_comparison "${kind_binary_path}" "${kind_external_hash}"
-
-# Install KIND
-install "${kind_binary_path}" /usr/local/bin/kind
-
-## Install kubectl
-
-# Ensure keyrings directory exists only if it doesn't already
-[ -d /etc/apt/keyrings ] || sudo mkdir -p -m 755 /etc/apt/keyrings
-
-kubectl_minor_version=$(curl -fsSL --retry 5 --retry-delay 10 "https://dl.k8s.io/release/stable.txt" | cut -d'.' -f1,2 )
-
-# Download and validate GPG key
-key_url="https://pkgs.k8s.io/core:/stable:/$kubectl_minor_version/deb/Release.key"
-if curl -fsSL --retry 5 --retry-delay 10 -A "Mozilla/5.0" "$key_url" | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg; then
-    echo "Key downloaded and stored successfully."
+# --- [Architecture Detection] ---
+KERNEL_ARCH=$(uname -m)
+if [[ $KERNEL_ARCH == "s390x" ]]; then
+    ARCH="s390x"
+    MINIKUBE_BINARY="minikube-linux-s390x"
+    # s390x releases are often missing on GitHub, so we build from source
+    INSTALL_KIND_FROM_SOURCE="true"
+elif [[ $KERNEL_ARCH == "aarch64" ]] || [[ $ARCH == "arm64" ]]; then
+    ARCH="arm64"
+    KIND_BINARY="kind-linux-arm64"
+    MINIKUBE_BINARY="minikube-linux-arm64"
+    INSTALL_KIND_FROM_SOURCE="false"
 else
-    echo "Failed to download valid GPG key from: $key_url"
-    exit 1
+    ARCH="amd64"
+    KIND_BINARY="kind-linux-amd64"
+    MINIKUBE_BINARY="minikube-linux-amd64"
+    INSTALL_KIND_FROM_SOURCE="false"
+fi
+# -----------------------------
+
+# 1. Install kubectl (via APT - Official support for s390x exists)
+# ----------------------------------------------------------------
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl
+
+sudo mkdir -p /etc/apt/keyrings
+# Use v1.32 stable repo
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg --yes
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update
+sudo apt-get install -y kubectl
+
+# 2. Install Kind
+# ----------------------------------------------------------------
+if [[ "$INSTALL_KIND_FROM_SOURCE" == "true" ]]; then
+    echo "Compiling Kind v${KIND_VERSION} from source for ${ARCH}..."
+    
+    # Ensure Go is in PATH (relies on golang.sh installation)
+    # Adjust path if your Go is installed elsewhere
+    export PATH="/usr/local/go/bin:/usr/bin:$PATH"
+    
+    # Install directly to /usr/local/bin
+    export GOBIN=/usr/local/bin
+    
+    # Use go install to build specific version
+    if go install sigs.k8s.io/kind@v${KIND_VERSION}; then
+        echo "Kind installed successfully via Go."
+    else
+        echo "FATAL: Failed to build Kind from source."
+        exit 1
+    fi
+else
+    # Use official binaries for x86/ARM
+    KIND_URL="https://github.com/kubernetes-sigs/kind/releases/download/v${KIND_VERSION}/${KIND_BINARY}"
+    echo "Downloading Kind (v${KIND_VERSION}) for ${ARCH} from $KIND_URL..."
+    curl -fsSL "$KIND_URL" -o /usr/local/bin/kind
+    chmod +x /usr/local/bin/kind
 fi
 
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/'$kubectl_minor_version'/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
-apt-get update
-apt-get install kubectl
-rm -f /etc/apt/sources.list.d/kubernetes.list
+# 3. Install Minikube
+# ----------------------------------------------------------------
+# Minikube officially supports s390x binaries
+MINIKUBE_URL="https://storage.googleapis.com/minikube/releases/latest/${MINIKUBE_BINARY}"
 
-# Install Helm
-curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+echo "Downloading Minikube for ${ARCH} from $MINIKUBE_URL..."
+curl -LO "$MINIKUBE_URL"
+sudo install "$MINIKUBE_BINARY" /usr/local/bin/minikube
+rm "$MINIKUBE_BINARY"
 
+# 4. Install Helm (Official Script supports s390x)
+# ----------------------------------------------------------------
+echo "Installing Helm..."
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+rm get_helm.sh
 
-# Download and install minikube
-minikube_version="latest"
-minikube_binary_path=$(download_with_retry "https://storage.googleapis.com/minikube/releases/${minikube_version}/minikube-linux-$ARCH")
+# 5. Install Kustomize (Official Script supports s390x)
+# ----------------------------------------------------------------
+echo "Installing Kustomize..."
+curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+mv kustomize /usr/local/bin/
 
-# Supply chain security - Minikube
-minikube_hash=$(get_checksum_from_github_release "kubernetes/minikube" "linux-$ARCH" "${minikube_version}" "SHA256")
-use_checksum_comparison "${minikube_binary_path}" "${minikube_hash}"
+# Validate installations
+echo "Verifying installations..."
+kubectl version --client
+kind version
+minikube version
+helm version
+kustomize version
 
-install "${minikube_binary_path}" /usr/local/bin/minikube
-
-# Install kustomize
-download_url="https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
-curl -fsSL "$download_url" | bash
-mv kustomize /usr/local/bin
-
+# Run tests
 invoke_tests "Tools" "Kubernetes tools"

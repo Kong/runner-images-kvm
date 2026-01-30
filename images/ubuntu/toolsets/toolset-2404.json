@@ -193,14 +193,6 @@
     ],
     "docker": {
         "images": [
-            "apache/kafka:4.0.0",
-            "confluentinc/cp-kafka:7.9.1",
-            "confluentinc/cp-schema-registry:7.9.1",
-            "confluentinc/cp-zookeeper:7.9.1",
-            "otel/opentelemetry-collector-contrib:0.52.0",
-            "redis:7.0.2",
-            "redis:7.0.5",
-            "quay.io/keycloak/keycloak:26.3"
         ],
         "components": [
             {
@@ -220,12 +212,12 @@
             {
                 "plugin": "buildx",
                 "version": "latest",
-                "asset": "linux-arm64"
+                "asset": "linux-s390x"
             },
             {
                 "plugin": "compose",
                 "version": "2.38.2",
-                "asset": "linux-aarch64"
+                "asset": "linux-s390x"
             }
         ]
     },
@@ -241,9 +233,7 @@
     ],
     "dotnet": {
         "versions": [
-            "8.0",
-            "9.0",
-            "10.0"
+            "8.0"
         ],
         "tools": [
             { "name": "nbgv", "test": "nbgv --version", "getversion" : "nbgv --version" }

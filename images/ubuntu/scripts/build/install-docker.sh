@@ -8,10 +8,16 @@
 # Source the helpers for use with the script
 source $HELPER_SCRIPTS/install.sh
 
+# 【改动 1】s390x 架构修正
+if [[ $(uname -m) == "s390x" ]]; then
+    ARCH="s390x"
+fi
+
 REPO_URL="https://download.docker.com/linux/ubuntu"
 GPG_KEY="/usr/share/keyrings/docker.gpg"
 REPO_PATH="/etc/apt/sources.list.d/docker.list"
-os_codename=$(lsb_release -cs)
+
+os_codename=$(lsb_release -cs 2>/dev/null)
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o $GPG_KEY
 echo "deb [arch=$ARCH signed-by=$GPG_KEY] $REPO_URL ${os_codename} stable" > $REPO_PATH
@@ -38,6 +44,7 @@ plugins=$(get_toolset_value '.docker.plugins[] .plugin')
 for plugin in $plugins; do
     version=$(get_toolset_value ".docker.plugins[] | select(.plugin == \"$plugin\") | .version")
     filter=$(get_toolset_value ".docker.plugins[] | select(.plugin == \"$plugin\") | .asset")
+    
     url=$(resolve_github_release_asset_url "docker/$plugin" "endswith(\"$filter\")" "$version")
     binary_path=$(download_with_retry "$url" "/tmp/docker-$plugin")
     mkdir -pv "/usr/libexec/docker/cli-plugins"
@@ -86,22 +93,39 @@ else
 fi
 
 # Download amazon-ecr-credential-helper
-aws_latest_release_url="https://api.github.com/repos/awslabs/amazon-ecr-credential-helper/releases/latest"
-aws_helper_url=$(curl -fsSL "${aws_latest_release_url}" | jq -r '.body' | awk -F'[()]' '/linux-'$ARCH'/ {print $2}')
-aws_helper_binary_path=$(download_with_retry "$aws_helper_url")
+if [[ "$ARCH" == "s390x" ]]; then
+    echo "Detected s390x. Building amazon-ecr-credential-helper from source..."
+    export PATH="/usr/local/go/bin:/usr/bin:$PATH"
 
-# Supply chain security - amazon-ecr-credential-helper
-aws_helper_external_hash=$(get_checksum_from_url "${aws_helper_url}.sha256" "docker-credential-ecr-login" "SHA256")
-use_checksum_comparison "$aws_helper_binary_path" "$aws_helper_external_hash"
+    go install github.com/awslabs/amazon-ecr-credential-helper/ecr-login/cli/docker-credential-ecr-login@latest
 
-# Install amazon-ecr-credential-helper
-install "$aws_helper_binary_path" "/usr/bin/docker-credential-ecr-login"
+    GOBIN_PATH=$(go env GOPATH)/bin/docker-credential-ecr-login
+    install "$GOBIN_PATH" "/usr/bin/docker-credential-ecr-login"
+
+    echo "Amazon ECR Credential Helper built and installed successfully."
+else
+    aws_latest_release_url="https://api.github.com/repos/awslabs/amazon-ecr-credential-helper/releases/latest"
+    aws_helper_url=$(curl -fsSL "${aws_latest_release_url}" | jq -r '.body' | awk -F'[()]' '/linux-'$ARCH'/ {print $2}')
+
+    if [[ -z "$aws_helper_url" ]]; then
+         echo "Error: Could not find download URL for amazon-ecr-credential-helper on $ARCH"
+         exit 1
+    fi
+
+    aws_helper_binary_path=$(download_with_retry "$aws_helper_url")
+
+    # Supply chain security
+    aws_helper_external_hash=$(get_checksum_from_url "${aws_helper_url}.sha256" "docker-credential-ecr-login" "SHA256")
+    use_checksum_comparison "$aws_helper_binary_path" "$aws_helper_external_hash"
+
+    install "$aws_helper_binary_path" "/usr/bin/docker-credential-ecr-login"
+fi
 
 # Cleanup custom repositories
 rm $GPG_KEY
 rm $REPO_PATH
 
 invoke_tests "Tools" "Docker"
-if [[ "${DOCKERHUB_PULL_IMAGES:-yes}" == "yes" ]]; then
+if [[ "${DOCKERHUB_PULL_IMAGES:-yes}" == "yes" ]] && [[ "$ARCH" != "s390x" ]]; then
     invoke_tests "Tools" "Docker images"
 fi

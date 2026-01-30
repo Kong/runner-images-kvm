@@ -1,0 +1,11 @@
+#cloud-config
+ssh_pwauth: true
+users:
+  - name: ubuntu
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    groups: sudo
+chpasswd:
+  list: |
+    ubuntu:ubuntu
+  expire: False

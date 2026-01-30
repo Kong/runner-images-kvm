@@ -8,16 +8,21 @@
 # Source the helpers for use with the script
 source $HELPER_SCRIPTS/install.sh
 
-# Download GitHub CLI
-gh_cli_url=$(resolve_github_release_asset_url "cli/cli" "contains(\"linux\") and contains(\"$ARCH\") and endswith(\".deb\")" "latest")
-gh_cli_deb_path=$(download_with_retry "$gh_cli_url")
+if [[ "$(uname -m)" == "s390x" ]]; then
+    apt-get update
+    apt-get install -y gh
+else
+    # Download GitHub CLI
+    gh_cli_url=$(resolve_github_release_asset_url "cli/cli" "contains(\"linux\") and contains(\"$ARCH\") and endswith(\".deb\")" "latest")
+    gh_cli_deb_path=$(download_with_retry "$gh_cli_url")
 
-# Supply chain security - GitHub CLI
-hash_url=$(resolve_github_release_asset_url "cli/cli" "endswith(\"checksums.txt\")" "latest")
-external_hash=$(get_checksum_from_url "$hash_url" "linux_$ARCH.deb" "SHA256")
-use_checksum_comparison "$gh_cli_deb_path" "$external_hash"
+    # Supply chain security - GitHub CLI
+    hash_url=$(resolve_github_release_asset_url "cli/cli" "endswith(\"checksums.txt\")" "latest")
+    external_hash=$(get_checksum_from_url "$hash_url" "linux_$ARCH.deb" "SHA256")
+    use_checksum_comparison "$gh_cli_deb_path" "$external_hash"
 
-# Install GitHub CLI
-apt-get install "$gh_cli_deb_path"
+    # Install GitHub CLI
+    apt-get install "$gh_cli_deb_path"
+fi
 
 invoke_tests "CLI.Tools" "GitHub CLI"

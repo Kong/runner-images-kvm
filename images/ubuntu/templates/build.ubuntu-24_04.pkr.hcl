@@ -233,41 +233,33 @@ variable "vm_template_name" {
 }
 
 source "qemu" "custom_image" {
-
-  http_directory = "cloud-init"
-  iso_url      = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-arm64.img"
+  iso_url      = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-s390x.img"
   iso_checksum = "file:https://cloud-images.ubuntu.com/noble/current/SHA256SUMS"
   disk_image   = true
-
-
-  qemu_binary = "qemu-system-aarch64"
-
-  qemuargs = [
-    ["-pflash", "/usr/share/AAVMF/AAVMF_CODE.fd"],
-    ["-pflash", "flash1.img"],
-    ["-cpu", "host"],
-    ["-smbios",
-      "type=1,serial=ds=nocloud-net;instance-id=packer;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
-    ],
-  ]
-
-  machine_type = "virt"
-
+  
+  qemu_binary  = "/usr/bin/qemu-system-s390x"
+  machine_type = "s390-ccw-virtio"
+  
+  qemuargs     = [["-cpu", "host"]]
+  
   ssh_password = "ubuntu"
   ssh_username = "ubuntu"
   ssh_timeout  = "10m" # can be slow on CI
 
-  headless         = true  # false # to see the process, In CI systems set to true
-  accelerator      = "kvm" # set to none if no kvm installed
+  headless         = true
+  accelerator      = "kvm"
   format           = "qcow2"
+
+  vm_name          = "${var.vm_template_name}"
+  
   memory           = 4096
   disk_size        = "86G"
   cpus             = 16
   disk_compression = true
   disk_interface   = "virtio"
-  # net_device       = "virtio-net"
 
-  vm_name = "${var.vm_template_name}"
+  cd_files         = ["./user-data", "./meta-data"]
+  cd_label         = "cidata"
 }
 
 build {
@@ -378,14 +370,14 @@ provisioner "shell" {
       // "${path.root}/../scripts/build/install-apache.sh",
       // "${path.root}/../scripts/build/install-aws-tools.sh",
       "${path.root}/../scripts/build/install-clang.sh",
-      "${path.root}/../scripts/build/install-swift.sh",
+      //"${path.root}/../scripts/build/install-swift.sh",
       "${path.root}/../scripts/build/install-cmake.sh",
       // "${path.root}/../scripts/build/install-codeql-bundle.sh",
       "${path.root}/../scripts/build/install-container-tools.sh",
       "${path.root}/../scripts/build/install-dotnetcore-sdk.sh",
       // "${path.root}/../scripts/build/install-microsoft-edge.sh",
       "${path.root}/../scripts/build/install-gcc-compilers.sh",
-      "${path.root}/../scripts/build/install-firefox.sh",
+      // geckodriver UNSUPPORTED "${path.root}/../scripts/build/install-firefox.sh",
       "${path.root}/../scripts/build/install-gfortran.sh",
       "${path.root}/../scripts/build/install-git.sh",
       "${path.root}/../scripts/build/install-git-lfs.sh",

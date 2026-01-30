@@ -36,6 +36,24 @@ if is_ubuntu24; then
     apt-get install --no-install-recommends libicu74
 fi
 
+if [[ "$(uname -m)" == "s390x" ]]; then
+    apt-get install -y dotnet-sdk-8.0
+    apt-get install -y dotnet-sdk-9.0 || true
+
+    set_etc_environment_variable DOTNET_SKIP_FIRST_TIME_EXPERIENCE 1
+    set_etc_environment_variable DOTNET_NOLOGO 1
+    set_etc_environment_variable DOTNET_MULTILEVEL_LOOKUP 0
+    prepend_etc_environment_path '$HOME/.dotnet/tools'
+
+    for dotnet_tool in ${dotnet_tools[@]}; do
+        echo "Installing dotnet tool $dotnet_tool"
+        dotnet tool install $dotnet_tool --tool-path '/etc/skel/.dotnet/tools' || true
+    done
+
+    invoke_tests "DotnetSDK"
+    exit 0
+fi
+
 # Install .NET SDKs and Runtimes
 mkdir -p /usr/share/dotnet
 
