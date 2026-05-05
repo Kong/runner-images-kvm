@@ -1,27 +1,58 @@
 #!/bin/bash -e
 ################################################################################
 ##  File:  install-zeek.sh
-##  Desc:  Install Zeek network analyzer for per-domain bandwidth observability
+##  Desc:  Build & install Zeek 8.2.0 from source (works on arm64 and amd64)
 ################################################################################
-# Source the helpers for use with the script
+
 source $HELPER_SCRIPTS/install.sh
 
-ubuntu_version=$(lsb_release -rs)
-REPO_URL="https://download.opensuse.org/repositories/security:/zeek/xUbuntu_${ubuntu_version}"
-GPG_KEY="/usr/share/keyrings/zeek.gpg"
-REPO_PATH="/etc/apt/sources.list.d/zeek.list"
-
-curl -fsSL "${REPO_URL}/Release.key" | gpg --dearmor > $GPG_KEY
-echo "deb [signed-by=$GPG_KEY] ${REPO_URL}/ /" > $REPO_PATH
+ZEEK_VERSION="8.2.0"
+ZEEK_PREFIX="/opt/zeek"
+SRC_URL="https://download.zeek.org/zeek-${ZEEK_VERSION}.tar.gz"
+BUILD_DIR="$(mktemp -d)"
 
 apt-get update
-apt-get install --no-install-recommends -y zeek ethtool
+apt-get install --no-install-recommends -y \
+  ca-certificates curl ethtool \
+  bison cmake flex g++ gcc git make ninja-build \
+  libfl-dev libpcap-dev libssl-dev zlib1g-dev \
+  libzmq3-dev cppzmq-dev \
+  python3 python3-dev swig
 
-rm $GPG_KEY
-rm $REPO_PATH
-echo "zeek $REPO_URL" >> $HELPER_SCRIPTS/apt-sources.txt
+cd "$BUILD_DIR"
+curl -fsSL "$SRC_URL" -o zeek.tar.gz
+tar xzf zeek.tar.gz
+cd "zeek-${ZEEK_VERSION}"
 
-# Wrapper: detect primary interface and exec zeek
+# --- configure & build ---------------------------------------------------------
+./configure \
+  --prefix="${ZEEK_PREFIX}" \
+  --generator=Ninja \
+  --build-type=Release \
+  --disable-auxtools
+
+cd build
+ninja -j 2
+ninja install
+
+# --- cleanup -------------------------------------------------------------------
+cd /
+rm -rf "$BUILD_DIR"
+
+ln -sf "${ZEEK_PREFIX}/bin/zeek"      /usr/local/bin/zeek
+ln -sf "${ZEEK_PREFIX}/bin/zeek-cut"  /usr/local/bin/zeek-cut
+cat > /etc/profile.d/zeek.sh << EOF
+export PATH="${ZEEK_PREFIX}/bin:\$PATH"
+EOF
+
+if [[ ! -x "${ZEEK_PREFIX}/bin/zeek" ]]; then
+  echo "ERROR: zeek binary not found after build (arch=$(dpkg --print-architecture))" >&2
+  exit 1
+fi
+"${ZEEK_PREFIX}/bin/zeek" --version
+
+echo "zeek (source ${ZEEK_VERSION}) ${SRC_URL}" >> $HELPER_SCRIPTS/apt-sources.txt
+
 cat > /usr/local/bin/zeek-capture.sh << 'WRAPPER'
 #!/bin/bash
 set -e
@@ -43,8 +74,6 @@ exec /opt/zeek/bin/zeek -C -i "$iface" LogAscii::use_json=T -e "redef Log::defau
 WRAPPER
 chmod +x /usr/local/bin/zeek-capture.sh
 
-# Systemd unit: start after network is up and cloud-init has finished
-# (cloud-init reconfigures netplan, so starting before it would race)
 cat > /etc/systemd/system/zeek-capture.service << 'UNIT'
 [Unit]
 Description=Zeek network analyzer for per-domain bandwidth capture
