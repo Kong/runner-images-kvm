@@ -27,7 +27,7 @@ fi
 echo "Use branch $branch"
 git checkout $branch
 
-version=$(git describe --tags --always|cut -d/ -f2|cut -d- -f1)
+version=$(git tag --sort=-version:refname|grep ubuntu24|cut -d/ -f2|cut -d- -f1|head -n 1)
 
 echo "Use version $version"
 
