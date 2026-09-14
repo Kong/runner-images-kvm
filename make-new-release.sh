@@ -57,7 +57,13 @@ if [[ -z $last_kvm_branch || -z $last_arm64_branch ]]; then
     exit 0
 fi
 
-git checkout tags/$rel
+# Resolve the upstream release commit up front. `git tag -f ${rel}` below repoints
+# this tag at the amd64 branch, so tags/$rel can no longer be used as the base once
+# that has run.
+base=$(git rev-parse "tags/$rel^{commit}")
+echo "Upstream release commit is $base"
+
+git checkout $base
 
 git branch -D ${rel}-kvm 2>/dev/null
 git checkout --no-track -b ${rel}-kvm 2>/dev/null
@@ -72,10 +78,11 @@ git tag -f ${rel}
 push -f refs/tags/${rel}
 gh release create $rel --notes "https://github.com/actions/runner-images/releases/tag/${rel//\//%2F}"
 
-# Start the arm64 branch from the upstream tag, not from the amd64 branch we just
-# built. Otherwise the arm64 branch inherits the 3 amd64 commits and the loop below
-# replays their arm64 counterparts on top, producing duplicated commit messages.
-git checkout tags/$rel
+# Start the arm64 branch from the upstream release commit, not from the amd64 branch
+# we just built. Otherwise the arm64 branch inherits the 3 amd64 commits and the loop
+# below replays their arm64 counterparts on top, producing duplicated commit messages.
+# tags/$rel points at the amd64 branch by now, so use the commit resolved earlier.
+git checkout $base
 
 git branch -D ${rel}-kvm-arm64 2>/dev/null
 git checkout --no-track -b ${rel}-kvm-arm64 2>/dev/null
