@@ -19,6 +19,13 @@ cherry() {
     c=$1
     git cherry-pick $c
     while [[ -e .git/CHERRY_PICK_HEAD ]]; do
+        # Nothing left to apply (the change is already in history). Skip it instead
+        # of leaving behind an empty commit that duplicates an existing message.
+        if git diff --quiet && git diff --cached --quiet; then
+            echo "Nothing to apply for $c, skipping"
+            git cherry-pick --skip
+            break
+        fi
         echo "Resolve conflicts and ctrl+d to continue"
         bash
     done
@@ -62,6 +69,11 @@ push -f refs/heads/${rel}-kvm
 git tag -f ${rel}
 push -f refs/tags/${rel}
 gh release create $rel --notes "https://github.com/actions/runner-images/releases/tag/${rel//\//%2F}"
+
+# Start the arm64 branch from the upstream tag, not from the amd64 branch we just
+# built. Otherwise the arm64 branch inherits the 3 amd64 commits and the loop below
+# replays their arm64 counterparts on top, producing duplicated commit messages.
+git checkout tags/$rel
 
 git branch -D ${rel}-kvm-arm64 2>/dev/null
 git checkout --no-track -b ${rel}-kvm-arm64 2>/dev/null
