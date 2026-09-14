@@ -21,7 +21,9 @@ cherry() {
     while [[ -e .git/CHERRY_PICK_HEAD ]]; do
         # Nothing left to apply (the change is already in history). Skip it instead
         # of leaving behind an empty commit that duplicates an existing message.
-        if git diff --quiet && git diff --cached --quiet; then
+        # Use `git status --porcelain` rather than `git diff`: it also reports
+        # untracked files, so a newly added file is never mistaken for "nothing".
+        if [[ -z $(git status --porcelain) ]]; then
             echo "Nothing to apply for $c, skipping"
             git cherry-pick --skip
             break
